@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCADA Predictive Management System</title>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="app-header">
+    <div class="brand-container">
+      <div class="brand-logo">⚡</div>
+      <div class="brand-title">
+        <h1>Predictive Industrial Center</h1>
+        <p>SCADA Real-Time Predictive AI Operations</p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs-container">
+      <button class="nav-tab active" data-tab="tab-overview">
+        📊 Genel Bakış
+      </button>
+      <button class="nav-tab" data-tab="tab-maintenance">
+        🛠️ Kestirimci Bakım
+      </button>
+      <button class="nav-tab" data-tab="tab-energy">
+        ⚡ Enerji & İsraf
+      </button>
+      <button class="nav-tab" data-tab="tab-grid">
+        🌐 Şebeke & Hat Riski
+      </button>
+    </nav>
+
+    <!-- SCADA Connection Status -->
+    <div class="header-status">
+      <div id="scada-ws-status" class="status-badge offline">
+        <span class="pulse-dot red"></span> SCADA Bağlanıyor...
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Body -->
+  <main class="main-container">
+
+    <!-- KPI Barometer (Always Visible) -->
+    <section class="grid-kpi">
+      <div class="glass-card kpi-card">
+        <div>
+          <div class="kpi-title">Fabrika Genel Sağlık Skoru</div>
+          <div id="kpi-plant-health" class="kpi-value text-emerald">--%</div>
+        </div>
+        <div class="kpi-icon">❤️</div>
+      </div>
+
+      <div class="glass-card kpi-card">
+        <div>
+          <div class="kpi-title">Şebeke Kararlılık İndeksi</div>
+          <div id="kpi-grid-stability" class="kpi-value text-cyan">--%</div>
+        </div>
+        <div class="kpi-icon">⚡</div>
+      </div>
+
+      <div class="glass-card kpi-card">
+        <div>
+          <div class="kpi-title">Tahmini 24s Boşta Çalışma Kaybı</div>
+          <div id="kpi-idle-cost-24h" class="kpi-value text-amber">₺0.00</div>
+        </div>
+        <div class="kpi-icon">💰</div>
+      </div>
+
+      <div class="glass-card kpi-card">
+        <div>
+          <div class="kpi-title">Aktif Donanım / Sensör Riski</div>
+          <div id="kpi-active-alerts-count" class="kpi-value text-rose">0</div>
+        </div>
+        <div class="kpi-icon">⚠️</div>
+      </div>
+    </section>
+
+    <!-- TAB 1: EXECUTIVE OVERVIEW -->
+    <section id="tab-overview" class="tab-panel active">
+      <div class="dashboard-row">
+        <!-- Main Real-time Power Chart -->
+        <div class="glass-card">
+          <h3>Aktif Güç ve Boşta Çalışma Güç Kaybı (Canlı kW)</h3>
+          <p class="text-sub">SCADA'dan gelen anlık güç tüketimi ve tespit edilen gereksiz boşta çalışma gücü</p>
+          <div class="chart-container mt-3">
+            <canvas id="powerTrendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Plant Health Doughnut Chart -->
+        <div class="glass-card">
+          <h3>Filo Sağlık Dağılımı</h3>
+          <p class="text-sub">Cihazların kestirimci durum analizi</p>
+          <div class="chart-container mt-3">
+            <canvas id="healthDistributionChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: PREDICTIVE MAINTENANCE & HEALTH -->
+    <section id="tab-maintenance" class="tab-panel">
+      <div class="flex-between mb-3">
+        <div>
+          <h2>Kestirimci Bakım & Ekipman Ömrü (RUL)</h2>
+          <p class="text-sub">Motor yıpranmaları, Cos φ düşüşü ve sensör arıza sinyalleri ile otomatik ömür tahmini</p>
+        </div>
+      </div>
+
+      <div id="maintenance-device-grid" class="device-grid mt-3">
+        <div class="glass-card">Cihaz verileri yükleniyor...</div>
+      </div>
+    </section>
+
+    <!-- TAB 3: PREDICTIVE ENERGY & CARBON COST -->
+    <section id="tab-energy" class="tab-panel">
+      <div class="dashboard-row">
+        <!-- 24h Energy Forecast -->
+        <div class="glass-card">
+          <h3>24 Saatlik Kestirimci Enerji Tüketim Projeksiyonu (kWh)</h3>
+          <p class="text-sub">Vardiya çalışma rejimlerine göre 24 saatlik tahmini enerji yükü</p>
+          <div class="chart-container mt-3">
+            <canvas id="energyForecastChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Re-engagement Breakdown Summary -->
+        <div class="glass-card">
+          <h3>Makine Rejim Dağılımı</h3>
+          <div class="mt-3">
+            <div class="flex-between metric-row">
+              <span>🟢 Aktif Üretimde (Yükte):</span>
+              <strong id="state-count-load">0</strong>
+            </div>
+            <div class="flex-between metric-row mt-2">
+              <span>🟡 Boşta Çalışan (İsraf):</span>
+              <strong id="state-count-idle" class="text-amber">0</strong>
+            </div>
+            <div class="flex-between metric-row mt-2">
+              <span>⚪ Standby / Kapalı:</span>
+              <strong id="state-count-off">0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="mt-4">Makine Bazlı Boşta Çalışma & Enerji İsraf Listesi</h3>
+      <div id="energy-device-list" class="mt-3">
+        <!-- Dynamically rendered -->
+      </div>
+    </section>
+
+    <!-- TAB 4: GRID QUALITY & CASCADING RISK -->
+    <section id="tab-grid" class="tab-panel">
+      <div class="dashboard-row">
+        <!-- Grid Stability Chart -->
+        <div class="glass-card">
+          <h3>Şebeke Gerilimi ve Frekans Sapma İzleyici (V / Hz)</h3>
+          <p class="text-sub">Nominal 230V / 50Hz değerlerinden anlık sapmalar ve donanım stres indeksi</p>
+          <div class="chart-container mt-3">
+            <canvas id="gridQualityChart"></canvas>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3>Domino Riski & Hat Topolojisi</h3>
+          <p class="text-sub">Birincil makinelerin duruş riski ve ambalaj hatlarına etkisi</p>
+          <div class="mt-3">
+            <p class="text-sub">Ana Enjeksiyon 421 ➔ Ambalaj A (Risk: Düşük)</p>
+            <p class="text-sub mt-2">Soğutma Kulesi 121 ➔ Ambalaj B (Risk: Orta)</p>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="mt-4">Şebeke Stres Matrisi (Cihaz Bazlı)</h3>
+      <div id="grid-matrix-container" class="device-grid mt-3">
+        <!-- Dynamically rendered -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Live Telemetry Footer Ticker -->
+  <footer class="ticker-bar">
+    <div><strong>CANLI TELEMETRİ AKIŞI:</strong></div>
+    <div id="telemetry-ticker-content" class="ticker-content">
+      SCADA paketleri bekleniyor...
+    </div>
+  </footer>
+
+  <!-- Application JS Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/predictive-engine.js"></script>
+  <script src="js/scada-client.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
